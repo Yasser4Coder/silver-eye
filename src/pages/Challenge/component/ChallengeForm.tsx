@@ -16,7 +16,7 @@ interface ChallengeFormProps {
 }
 
 export default function ChallengeForm({
-  chapterId,
+  chapterId: _chapterId,
   challengeId,
   storyScript,
   challengeDescription,
@@ -24,7 +24,7 @@ export default function ChallengeForm({
   isSolved = false
 }: ChallengeFormProps) {
 
-  const [file, setFile] = useState<File | null>(null);
+  const [_file, setFile] = useState<File | null>(null);
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{

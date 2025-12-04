@@ -9,7 +9,7 @@ import {
   clearUser,
 } from "../utils/storage";
 
-import { login as apiLogin, type LoginError } from "../api/auth";
+import { login as apiLogin } from "../api/auth";
 import type { Participant } from "../types/participant";
 
 interface AuthContextType {

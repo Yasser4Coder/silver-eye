@@ -57,8 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await apiLogin({ username, password });
 
-      // Save tokens
-      setTokens(res.accessToken, res.refreshToken);
+      // Save tokens (refreshToken is stored in httpOnly cookie, not in response)
+      setTokens(res.data.accessToken, '');
 
       // Fetch user profile
       const profile = await getProfile();

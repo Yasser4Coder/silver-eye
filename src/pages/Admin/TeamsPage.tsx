@@ -9,7 +9,6 @@ import {
   addParticipantToTeam,
   removeParticipantFromTeam,
   type CreateTeamPayload,
-  type UpdateTeamPayload,
 } from "../../api/admin";
 import type { Team } from "../../types/team";
 import type { Participant } from "../../types/participant";
