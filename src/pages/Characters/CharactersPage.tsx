@@ -1,4 +1,5 @@
 import CharacterCard from "./component/CharacterCard";
+import characterImage from "../../assets/characters/maciline.jpg";
 
 export default function CharactersPage() {
   return (
@@ -10,7 +11,11 @@ export default function CharactersPage() {
         px-4 py-10
       "
     >
-      <CharacterCard />
+      <CharacterCard
+        backgroundImage={characterImage}
+        characterName="Marciline"
+        animateFlip={true}
+      />
       <CharacterCard />
       <CharacterCard />
       <CharacterCard />
