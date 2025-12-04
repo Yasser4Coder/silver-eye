@@ -29,12 +29,29 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       import.meta.env.VITE_SERVER_URL || "https://silvereye.clickncod.com";
 
     const socketInstance = io(SERVER_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"], // Try polling first as it's more reliable
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
       withCredentials: true,
       autoConnect: true,
+      upgrade: true,
+      rememberUpgrade: false,
+    });
+
+    // Log connection state changes
+    socketInstance.on("connecting", () => {
+      console.log("🔄 WebSocket connecting...");
+    });
+
+    socketInstance.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 WebSocket reconnection attempt ${attemptNumber}`);
+    });
+
+    socketInstance.on("reconnect_failed", () => {
+      console.error("❌ WebSocket reconnection failed");
     });
 
     socketInstance.on("connect", () => {
