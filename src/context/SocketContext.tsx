@@ -46,11 +46,9 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     socketInstance.on("connect_error", (error) => {
       console.error("WebSocket connection error:", error);
       console.error("Connection URL:", SERVER_URL);
-      console.error("Error details:", {
-        message: error.message,
-        type: error.type,
-        description: error.description
-      });
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+      }
       setConnected(false);
     });
 
