@@ -26,6 +26,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
+      withCredentials: true,
+      autoConnect: true,
     });
 
     socketInstance.on("connect", () => {
@@ -43,6 +45,12 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
     socketInstance.on("connect_error", (error) => {
       console.error("WebSocket connection error:", error);
+      console.error("Connection URL:", SERVER_URL);
+      console.error("Error details:", {
+        message: error.message,
+        type: error.type,
+        description: error.description
+      });
       setConnected(false);
     });
 
