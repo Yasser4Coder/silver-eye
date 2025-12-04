@@ -19,10 +19,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Create socket connection - connect to server (not /api endpoint)
-    // For local dev: http://localhost:3000
-    // For production: https://silver-eye.onrender.com
-    const SERVER_URL = import.meta.env.VITE_SERVER_URL || 
-                      (import.meta.env.DEV ? "http://localhost:3000" : "https://silver-eye.onrender.com");
+    const SERVER_URL = import.meta.env.VITE_SERVER_URL || "https://silvereye.clickncod.com";
     
     const socketInstance = io(SERVER_URL, {
       transports: ["websocket", "polling"],
