@@ -6,6 +6,7 @@ export interface Challenge {
   flag: string;
   storyNumber: number;
   challengeScore: number;
+  maxAttempts?: number; // Maximum number of attempts allowed for this challenge (defaults to 4)
   storyId: number;
   submissionStatus?: {
     solved: boolean;

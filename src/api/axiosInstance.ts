@@ -6,6 +6,8 @@ import {
   clearTokens,
 } from "../utils/storage";
 
+// baseURL: "https://silvereye.clickncod.com/api";
+
 const api = axios.create({
   baseURL: "https://silvereye.clickncod.com/api",
   withCredentials: true,
