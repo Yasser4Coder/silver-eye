@@ -14,7 +14,7 @@ export default function CharactersPage() {
     >
       <CharacterCard
         backgroundImage={characterImage}
-        characterName="Marciline"
+        characterName="Marceline"
         animateFlip={true}
       />
       <CharacterCard
