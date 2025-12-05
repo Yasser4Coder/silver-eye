@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useSocket } from "./SocketContext";
 import type { Notification } from "../types/notification";
 
@@ -20,6 +20,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { socket, connected } = useSocket();
 
+  const removeNotification = useCallback((id: number) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const addNotification = useCallback((notification: Notification) => {
+    setNotifications((prev) => [notification, ...prev]);
+    // Notifications will stay until manually closed by the user
+  }, []);
+
   // Listen for new notifications via WebSocket
   useEffect(() => {
     if (!socket || !connected) return;
@@ -33,20 +42,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       socket.off("notification:new", handleNewNotification);
     };
-  }, [socket, connected]);
-
-  const addNotification = (notification: Notification) => {
-    setNotifications((prev) => [notification, ...prev]);
-    
-    // Auto-remove notification after 10 seconds
-    setTimeout(() => {
-      removeNotification(notification.id);
-    }, 10000);
-  };
-
-  const removeNotification = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  }, [socket, connected, addNotification]);
 
   return (
     <NotificationContext.Provider
