@@ -1,5 +1,6 @@
 import CharacterCard from "./component/CharacterCard";
 import characterImage from "../../assets/characters/maciline.jpg";
+import juliusImage from "../../assets/characters/julius.png";
 
 export default function CharactersPage() {
   return (
@@ -16,7 +17,11 @@ export default function CharactersPage() {
         characterName="Marciline"
         animateFlip={true}
       />
-      <CharacterCard />
+      <CharacterCard
+        backgroundImage={juliusImage}
+        characterName="Julius"
+        animateFlip={true}
+      />
       <CharacterCard />
       <CharacterCard />
       <CharacterCard />
