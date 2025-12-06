@@ -5,7 +5,13 @@ import logo from "../../../assets/logo.svg";
 interface CharacterCardProps {
   backgroundImage?: string;
   characterName?: string;
-  animateFlip?: boolean;
+  animateFlip?: boolean; // Whether card should be flipped/visible
+  isGlowing?: boolean; // Whether card is currently glowing
+  shouldAnimate?: boolean; // Whether to animate the flip (true on first flip, false to maintain state)
+  showCharacterBg?: boolean; // Whether to show character background (true during/after glow)
+  scatterDirection?: "left" | "right" | null; // Direction for scatter animation
+  numberOfFlips?: number; // Number of flips (default 3, 7th card uses 6)
+  flipDuration?: number; // Duration for flip animation (default 3s, 7th card uses 6s)
   onClick?: () => void;
 }
 
@@ -13,6 +19,12 @@ const CharacterCard: FC<CharacterCardProps> = ({
   backgroundImage,
   characterName,
   animateFlip = false,
+  isGlowing = false,
+  shouldAnimate = true,
+  showCharacterBg = false,
+  scatterDirection = null,
+  numberOfFlips = 3,
+  flipDuration = 3,
   onClick,
 }) => {
   const handleClick = () => {
@@ -36,20 +48,26 @@ const CharacterCard: FC<CharacterCardProps> = ({
     cursor-pointer
     relative
     overflow-hidden
+    ${isGlowing ? "shadow-[0_0_60px_rgba(255,0,0,0.9)] ring-4 ring-red-500/50" : ""}
   `;
 
+  // Use character background only when showCharacterBg is true (during/after glow)
+  const displayBackground = showCharacterBg ? backgroundImage : undefined;
+
   const cardStyle = {
-    backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-    backgroundColor: backgroundImage ? "transparent" : "black",
-    backgroundSize: backgroundImage ? "cover" : undefined,
-    backgroundPosition: backgroundImage ? "center" : undefined,
-    backgroundRepeat: backgroundImage ? "no-repeat" : undefined,
+    backgroundImage: displayBackground
+      ? `url(${displayBackground})`
+      : undefined,
+    backgroundColor: displayBackground ? "transparent" : "black",
+    backgroundSize: displayBackground ? "cover" : undefined,
+    backgroundPosition: displayBackground ? "center" : undefined,
+    backgroundRepeat: displayBackground ? "no-repeat" : undefined,
   };
 
   const cardContent = (
     <>
-      {/* Dark overlay for better visibility */}
-      {backgroundImage && (
+      {/* Dark overlay for better visibility - only when character bg is shown */}
+      {displayBackground && (
         <div className="absolute inset-0 bg-black/50 rounded-xl z-0" />
       )}
 
@@ -68,32 +86,64 @@ const CharacterCard: FC<CharacterCardProps> = ({
     </>
   );
 
-  if (animateFlip) {
-    return (
-      <motion.div
-        onClick={handleClick}
-        className={cardClassName}
-        style={cardStyle}
-        initial={{ rotateY: -180, opacity: 0 }}
-        animate={{ rotateY: 0, opacity: 1 }}
-        transition={{
-          duration: 1.2,
-          ease: "easeOut",
-          type: "spring",
-          stiffness: 80,
-          damping: 15,
-        }}
-        whileHover={{ scale: 1.05 }}
-      >
-        {cardContent}
-      </motion.div>
-    );
-  }
+  // Generate flip keyframes based on number of flips
+  const generateFlipKeyframes = () => {
+    const keyframes: number[] = [-180];
+    const step = 360 / numberOfFlips;
+    for (let i = 1; i < numberOfFlips; i++) {
+      keyframes.push(-180 + step * i);
+    }
+    keyframes.push(0);
+    return keyframes;
+  };
+
+  const flipKeyframes =
+    shouldAnimate && animateFlip ? generateFlipKeyframes() : [0];
+  const flipTimes =
+    shouldAnimate && animateFlip
+      ? Array.from({ length: numberOfFlips + 1 }, (_, i) => i / numberOfFlips)
+      : [0, 1];
 
   return (
-    <div onClick={handleClick} className={cardClassName} style={cardStyle}>
+    <motion.div
+      onClick={handleClick}
+      className={cardClassName}
+      style={cardStyle}
+      initial={{ rotateY: -180, opacity: 0, x: 0 }}
+      animate={{
+        rotateY:
+          shouldAnimate && animateFlip ? flipKeyframes : animateFlip ? 0 : -180,
+        opacity: scatterDirection ? 0 : animateFlip ? 1 : 0,
+        scale: isGlowing ? 1.08 : 1,
+        x:
+          scatterDirection === "left"
+            ? "-200vw"
+            : scatterDirection === "right"
+              ? "200vw"
+              : 0,
+      }}
+      transition={{
+        rotateY: {
+          duration: shouldAnimate ? flipDuration : 0,
+          times: flipTimes,
+          ease: "linear",
+        },
+        opacity: {
+          duration: scatterDirection ? 4 : shouldAnimate ? flipDuration : 0, // Fade out over 4 seconds during scatter
+        },
+        x: {
+          duration: scatterDirection ? 4 : 0, // Slower scatter animation (4 seconds)
+          ease: "easeIn",
+        },
+        scale: {
+          duration: 0.3,
+          ease: "easeInOut",
+        },
+      }}
+      whileHover={{ scale: isGlowing ? 1.08 : animateFlip ? 1.05 : 1 }}
+    >
       {cardContent}
-    </div>
+    </motion.div>
   );
 };
 

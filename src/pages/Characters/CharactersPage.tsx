@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import CharacterCard from "./component/CharacterCard";
 import CharacterModal from "./component/CharacterModal";
 import characterImage from "../../assets/characters/maciline.jpg";
@@ -11,6 +11,10 @@ import judithImage from "../../assets/characters/jodith.png";
 import judithModalImage from "../../assets/characters/judithbs.png";
 import johnImage from "../../assets/characters/john.jpg";
 import johnModalImage from "../../assets/characters/johnbs.png";
+import williamImage from "../../assets/characters/william.png";
+import williamModalImage from "../../assets/characters/williambs.png";
+import mrJImage from "../../assets/characters/mrj.jpg";
+import mrJModalImage from "../../assets/characters/mrjbs.png";
 
 export default function CharactersPage() {
   const [isMarcelineModalOpen, setIsMarcelineModalOpen] = useState(false);
@@ -18,6 +22,21 @@ export default function CharactersPage() {
   const [isWolfModalOpen, setIsWolfModalOpen] = useState(false);
   const [isJudithModalOpen, setIsJudithModalOpen] = useState(false);
   const [isJohnModalOpen, setIsJohnModalOpen] = useState(false);
+  const [isWilliamModalOpen, setIsWilliamModalOpen] = useState(false);
+  const [isSeventhCardModalOpen, setIsSeventhCardModalOpen] = useState(false);
+  const [isMrJModalOpen, setIsMrJModalOpen] = useState(false);
+
+  // Animation sequence state
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [animatingCardIndex, setAnimatingCardIndex] = useState<number | null>(
+    null
+  );
+  const [glowingCardIndex, setGlowingCardIndex] = useState<number | null>(null);
+  const [revealedCards, setRevealedCards] = useState<Set<number>>(new Set()); // Cards that have been revealed (show character bg)
+  const [scatteringCards, setScatteringCards] = useState<
+    Map<number, "left" | "right">
+  >(new Map()); // Cards that are scattering
+  const [showSeventhCard, setShowSeventhCard] = useState(false);
 
   const marcelinBackstory = `Marceline was eight years old when she discovered that the world is not born fair, and that some souls are thrown into life the same way garbage is tossed into dark corners. She never knew what a home meant, nor what safety felt like; dumpsters were her roof, rain was her blanket, and the city—so cruel—became her only mother.
 
@@ -251,48 +270,303 @@ Not everything white is kind…
 
 and not everything black is a slave.`;
 
+  const williamBackstory = `do this text right now then i change it later`;
+
+  const mrJBackstory = `J" Jerov had never been anything more than a child born in a small Russian village buried under snow for nine months of the year. His father died in a war he never truly understood, and his mother later took her own life, collapsing under the weight of poverty, cold, and loneliness.
+
+By the age of ten, Jerov learned that the world was colder than the frost clinging to the village windows… and that mercy was nothing but a myth.
+
+At sixteen, he was forcibly conscripted into the Spetsnaz, Russia's special forces.
+
+And there… the creation of the monster began.
+
+Jerov became an exceptional soldier by every measure:
+
+A massive build, deadly discipline, sharp intelligence, and a heart forced to turn into stone just to survive.
+
+But his excellence made him seen as a tool—never a human.
+
+The Mission That Changed Him Forever
+
+During a secret operation in Siberia, his unit was sent to raid an underground facility with zero details.
+
+Their commanders told them:
+
+"You see nothing… you know nothing… you hear nothing. Whoever asks, dies."
+
+But Jerov did see.
+
+He opened a door he was never supposed to open—
+
+and found himself staring at glass rooms where experiments were being conducted on humans.
+
+Men… women… children.
+
+Eyes open, but their consciousness stolen.
+
+Bodies injected with nameless substances.
+
+Wires entering their skulls and leaving through their limbs.
+
+It was a facility for manufacturing the "perfect soldier"…
+
+by destroying the human inside.
+
+And then, on a dimly lit screen, he found something else:
+
+A blacklist containing names of Spetsnaz soldiers scheduled to be "recycled" after their usefulness ended.
+
+His name was third.
+
+At that moment…
+
+he did not feel fear.
+
+He felt something completely empty: nothingness.
+
+His superior officer caught him.
+
+An immediate kill order was issued.
+
+The State Hunting the Man Who No Longer Belonged to It
+
+Within minutes, the facility turned into a killing ground.
+
+Comrades from yesterday became hunters today.
+
+Jerov fled through the tunnels—wounded, half-dead, chased mercilessly by the very unit he once served with.
+
+He collapsed in the frozen forest, his blood freezing before it touched the ground.
+
+Had fate not intervened, he would have died there.
+
+His Savior… Was the Silver Eye Himself
+
+A single man appeared in the snow.
+
+His face hidden behind a mask…
+
+His eyes dead in the Siberian darkness.
+
+He carried Jerov away without speaking a word.
+
+Treated his wounds.
+
+Pulled him back from the edge of death.
+
+And as Jerov awakened, the man spoke in a calm, terrifying voice:
+
+"You are now dead to Russia…
+
+So be alive only for me."
+
+Jerov had nothing left—
+
+No family, no homeland, no identity.
+
+Everything had been stolen.
+
+The Silver Eye gave him one thing back: purpose.
+
+From that moment, he became Mr. J—
+
+The black shadow of the Silver Eye,
+
+his right hand,
+
+his guardian,
+
+the blade that never hesitates.
+
+Why did Mr. J kill himself on the rooftop?
+
+Because Russia would have turned him into a tortured corpse.
+
+Interrogation would have branded him a traitor in the eyes of the Silver Eye.
+
+And living without his "savior" meant returning to the void he had carried since childhood.
+
+For him, death was—
+
+a choice,
+
+a freedom,
+
+and the ultimate act of loyalty.`;
+
+  const seventhCardBackstory = `SILVER EYE`;
+
+  // Define cards array for easier management (memoized to prevent re-creation)
+  const cards = useMemo(
+    () => [
+      {
+        backgroundImage: characterImage,
+        characterName: "Marceline",
+        setModalState: setIsMarcelineModalOpen,
+      },
+      {
+        backgroundImage: juliusImage,
+        characterName: "Julius",
+        setModalState: setIsJuliusModalOpen,
+      },
+      {
+        backgroundImage: wolfImage,
+        characterName: "Wolf",
+        setModalState: setIsWolfModalOpen,
+      },
+      {
+        backgroundImage: judithImage,
+        characterName: "Judith",
+        setModalState: setIsJudithModalOpen,
+      },
+      {
+        backgroundImage: johnImage,
+        characterName: "John",
+        setModalState: setIsJohnModalOpen,
+      },
+      {
+        backgroundImage: mrJImage,
+        characterName: "Mr. J",
+        setModalState: setIsMrJModalOpen,
+      },
+    ],
+    []
+  );
+
+  // Prevent body scroll during scatter animation
+  useEffect(() => {
+    // Prevent scrolling when cards are scattering
+    if (scatteringCards.size > 0) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    }
+  }, [scatteringCards.size]);
+
+  // Sequential animation logic: flip → glow (3s) → next card
+  useEffect(() => {
+    // Start animation sequence
+    const startAnimationSequence = () => {
+      cards.forEach((_, index) => {
+        // Delay for each card: (flip time 3s + glow time 1.2s) * index
+        const flipDelay = index * 4200; // 4.2 seconds per card (3s flip + 1.2s glow)
+
+        // Trigger flip animation
+        setTimeout(() => {
+          setAnimatingCardIndex(index);
+
+          // After flip completes (3s), mark as flipped and start glow
+          setTimeout(() => {
+            setFlippedCards((prev) => new Set([...prev, index]));
+            setAnimatingCardIndex(null);
+            // Reveal character background when glow starts
+            setRevealedCards((prev) => new Set([...prev, index]));
+            setGlowingCardIndex(index);
+
+            // After 1.2 seconds, stop glow and move to next card
+            setTimeout(() => {
+              setGlowingCardIndex(null);
+
+              // If this is the 6th card (index 5), trigger scatter animation
+              if (index === 5) {
+                // Wait a moment, then scatter the first 6 cards
+                setTimeout(() => {
+                  const scatterMap = new Map<number, "left" | "right">();
+                  // Cards 0, 1, 2 go left
+                  scatterMap.set(0, "left");
+                  scatterMap.set(1, "left");
+                  scatterMap.set(2, "left");
+                  // Cards 3, 4, 5 go right
+                  scatterMap.set(3, "right");
+                  scatterMap.set(4, "right");
+                  scatterMap.set(5, "right");
+                  setScatteringCards(scatterMap);
+
+                  // After scatter animation (4s), show 7th card
+                  setTimeout(() => {
+                    setShowSeventhCard(true);
+                    // Start 7th card animation (6 flips in 6 seconds)
+                    setAnimatingCardIndex(6);
+
+                    // After 6 seconds, mark as flipped and start glow
+                    setTimeout(() => {
+                      setFlippedCards((prev) => new Set([...prev, 6]));
+                      setAnimatingCardIndex(null);
+                      setRevealedCards((prev) => new Set([...prev, 6]));
+                      setGlowingCardIndex(6);
+
+                      // After 1.2 seconds, stop glow
+                      setTimeout(() => {
+                        setGlowingCardIndex(null);
+                      }, 1200);
+                    }, 6000);
+                  }, 1000);
+                }, 500);
+              }
+            }, 1200);
+          }, 3000);
+        }, flipDelay);
+      });
+    };
+
+    startAnimationSequence();
+  }, [cards]); // Include cards in dependencies
+
   return (
-    <>
+    <div className="w-full h-full overflow-hidden">
       <div
         className="
         w-full h-full
         flex flex-wrap justify-center
         gap-6
         px-4 py-10
+        overflow-hidden
+        relative
       "
       >
-        <CharacterCard
-          backgroundImage={characterImage}
-          characterName="Marceline"
-          animateFlip={true}
-          onClick={() => setIsMarcelineModalOpen(true)}
-        />
-        <CharacterCard
-          backgroundImage={juliusImage}
-          characterName="Julius"
-          animateFlip={true}
-          onClick={() => setIsJuliusModalOpen(true)}
-        />
-        <CharacterCard
-          backgroundImage={wolfImage}
-          characterName="Wolf"
-          animateFlip={true}
-          onClick={() => setIsWolfModalOpen(true)}
-        />
-        <CharacterCard
-          backgroundImage={judithImage}
-          characterName="Judith"
-          animateFlip={true}
-          onClick={() => setIsJudithModalOpen(true)}
-        />
-        <CharacterCard
-          backgroundImage={johnImage}
-          characterName="John"
-          animateFlip={true}
-          onClick={() => setIsJohnModalOpen(true)}
-        />
-        <CharacterCard />
+        {cards.map((card, index) => {
+          const isFlipped =
+            flippedCards.has(index) || animatingCardIndex === index;
+          const shouldAnimate = animatingCardIndex === index; // Only animate when currently flipping
+          const showCharacterBg =
+            revealedCards.has(index) || glowingCardIndex === index; // Show character bg during/after glow
+          const scatterDirection = scatteringCards.get(index) || null;
+
+          return (
+            <CharacterCard
+              key={index}
+              backgroundImage={card.backgroundImage}
+              characterName={card.characterName}
+              animateFlip={isFlipped}
+              shouldAnimate={shouldAnimate}
+              isGlowing={glowingCardIndex === index}
+              showCharacterBg={showCharacterBg}
+              scatterDirection={scatterDirection}
+              numberOfFlips={3}
+              flipDuration={3}
+              onClick={() => card.setModalState(true)}
+            />
+          );
+        })}
       </div>
+
+      {/* 7th Card - Centered */}
+      {showSeventhCard && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <CharacterCard
+            backgroundImage={williamImage}
+            characterName="William"
+            animateFlip={flippedCards.has(6) || animatingCardIndex === 6}
+            shouldAnimate={animatingCardIndex === 6}
+            isGlowing={glowingCardIndex === 6}
+            showCharacterBg={revealedCards.has(6) || glowingCardIndex === 6}
+            numberOfFlips={6}
+            flipDuration={6}
+            onClick={() => setIsSeventhCardModalOpen(true)}
+          />
+        </div>
+      )}
 
       {/* Marceline Character Modal */}
       <CharacterModal
@@ -338,6 +612,33 @@ and not everything black is a slave.`;
         imageUrl={johnModalImage}
         backstory={johnBackstory}
       />
-    </>
+
+      {/* William Character Modal */}
+      <CharacterModal
+        isOpen={isWilliamModalOpen}
+        onClose={() => setIsWilliamModalOpen(false)}
+        characterName="William"
+        imageUrl={williamModalImage}
+        backstory={williamBackstory}
+      />
+
+      {/* Mr. J Character Modal */}
+      <CharacterModal
+        isOpen={isMrJModalOpen}
+        onClose={() => setIsMrJModalOpen(false)}
+        characterName="Mr. J"
+        imageUrl={mrJModalImage}
+        backstory={mrJBackstory}
+      />
+
+      {/* 7th Card (William) Character Modal */}
+      <CharacterModal
+        isOpen={isSeventhCardModalOpen}
+        onClose={() => setIsSeventhCardModalOpen(false)}
+        characterName="William"
+        imageUrl={williamModalImage}
+        backstory={seventhCardBackstory}
+      />
+    </div>
   );
 }
