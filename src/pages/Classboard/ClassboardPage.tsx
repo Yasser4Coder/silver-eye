@@ -1,26 +1,80 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
+import {
+  Trophy,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ArrowRight,
+} from "lucide-react";
 import { getAllTeams } from "../../api/teams";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../hooks/useAuth";
 import type { Team } from "../../types/team";
+import {
+  FREEZE_ENABLED,
+  applyFrozenScores,
+} from "../../config/classboardFreeze";
 
 export default function ClassboardPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [previousRanks, setPreviousRanks] = useState<Record<number, number>>({});
+  const [previousRanks, setPreviousRanks] = useState<Record<number, number>>(
+    {}
+  );
   const { socket, connected } = useSocket();
   const { user } = useAuth();
 
-  // Fetch initial teams
-  useEffect(() => {
-    fetchTeams();
+  const updateTeamsWithAnimation = useCallback((newTeams: Team[]) => {
+    // Store previous ranks before updating
+    setTeams((currentTeams) => {
+      const currentRanks: Record<number, number> = {};
+      currentTeams.forEach((team) => {
+        if (team.id) {
+          currentRanks[team.id] = team.rank || 999;
+        }
+      });
+
+      // Sort by rank (ascending - rank 1 is best)
+      const sortedTeams = [...newTeams].sort((a, b) => {
+        const rankA = a.rank || 999;
+        const rankB = b.rank || 999;
+        return rankA - rankB;
+      });
+
+      // Update previous ranks for next comparison
+      setPreviousRanks(currentRanks);
+      return sortedTeams;
+    });
   }, []);
 
-  // Listen for WebSocket team updates
+  const fetchTeams = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getAllTeams();
+      let teamsData = response.teams || [];
+
+      // Apply frozen scores if freeze mode is enabled
+      if (FREEZE_ENABLED) {
+        teamsData = applyFrozenScores(teamsData);
+      }
+
+      updateTeamsWithAnimation(teamsData);
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [updateTeamsWithAnimation]);
+
+  // Fetch initial teams (always fetch, but apply frozen scores if freeze mode is enabled)
   useEffect(() => {
-    if (!socket || !connected) return;
+    fetchTeams();
+  }, [fetchTeams]);
+
+  // Listen for WebSocket team updates (only if not frozen)
+  useEffect(() => {
+    if (FREEZE_ENABLED || !socket || !connected) return;
 
     // Join classboard room
     socket.emit("join:classboard");
@@ -34,43 +88,11 @@ export default function ClassboardPage() {
     return () => {
       socket.off("teams:update", handleTeamsUpdate);
     };
-  }, [socket, connected]);
+  }, [socket, connected, updateTeamsWithAnimation]);
 
-  const fetchTeams = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllTeams();
-      const teamsData = response.teams || [];
-      updateTeamsWithAnimation(teamsData);
-    } catch (error) {
-      console.error("Failed to fetch teams:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTeamsWithAnimation = (newTeams: Team[]) => {
-    // Store previous ranks before updating
-    const currentRanks: Record<number, number> = {};
-    teams.forEach((team) => {
-      if (team.id) {
-        currentRanks[team.id] = team.rank || 999;
-      }
-    });
-
-    // Sort by rank (ascending - rank 1 is best)
-    const sortedTeams = [...newTeams].sort((a, b) => {
-      const rankA = a.rank || 999;
-      const rankB = b.rank || 999;
-      return rankA - rankB;
-    });
-
-    // Update previous ranks for next comparison
-    setPreviousRanks(currentRanks);
-    setTeams(sortedTeams);
-  };
-
-  const getRankChange = (teamId: number | undefined): "up" | "down" | "same" => {
+  const getRankChange = (
+    teamId: number | undefined
+  ): "up" | "down" | "same" => {
     if (!teamId) return "same";
     const previousRank = previousRanks[teamId];
     const currentTeam = teams.find((t) => t.id === teamId);
@@ -130,8 +152,8 @@ export default function ClassboardPage() {
                     className="absolute -left-12 z-10"
                   >
                     <div className="relative">
-                      <ArrowRight 
-                        className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" 
+                      <ArrowRight
+                        className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]"
                         size={32}
                         strokeWidth={2.5}
                       />
@@ -149,11 +171,11 @@ export default function ClassboardPage() {
                     type: "spring",
                     stiffness: 100,
                     damping: 25,
-                    layout: { 
+                    layout: {
                       type: "spring",
                       stiffness: 100,
                       damping: 25,
-                      duration: 1.5
+                      duration: 1.5,
                     },
                   }}
                   className={`
@@ -167,9 +189,15 @@ export default function ClassboardPage() {
                   <div className="flex items-center gap-4">
                     {/* Rank with trophy for top 3 */}
                     <div className="flex items-center gap-2">
-                      {rank === 1 && <Trophy className="text-yellow-400" size={24} />}
-                      {rank === 2 && <Trophy className="text-gray-300" size={24} />}
-                      {rank === 3 && <Trophy className="text-orange-400" size={24} />}
+                      {rank === 1 && (
+                        <Trophy className="text-yellow-400" size={24} />
+                      )}
+                      {rank === 2 && (
+                        <Trophy className="text-gray-300" size={24} />
+                      )}
+                      {rank === 3 && (
+                        <Trophy className="text-orange-400" size={24} />
+                      )}
                       <span
                         className={`text-3xl font-bold font-[CFAnarchy] ${getRankColor(
                           rank
