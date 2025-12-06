@@ -6,15 +6,21 @@ interface CharacterCardProps {
   backgroundImage?: string;
   characterName?: string;
   animateFlip?: boolean;
+  onClick?: () => void;
 }
 
 const CharacterCard: FC<CharacterCardProps> = ({
   backgroundImage,
   characterName,
   animateFlip = false,
+  onClick,
 }) => {
   const handleClick = () => {
-    console.log("Character card clicked!");
+    if (onClick) {
+      onClick();
+    } else {
+      console.log("Character card clicked!");
+    }
   };
 
   const cardClassName = `
